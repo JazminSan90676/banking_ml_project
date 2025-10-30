@@ -1,0 +1,36 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:14
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: predictions
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  api:
+    build: ./src/api
+    volumes:
+      - ./src/model_pipeline.pkl:/app/model_pipeline.pkl:ro
+    environment:
+      - DATABASE_URL=postgresql://user:pass@db:5432/predictions
+      - MODEL_PATH=/app/model_pipeline.pkl
+    depends_on:
+      - db
+    ports:
+      - "8000:80"
+
+  dashboard:
+    build: ./src/dashboard
+    environment:
+      - DATABASE_URL=postgresql://user:pass@db:5432/predictions
+    depends_on:
+      - db
+    ports:
+      - "8050:8050"
+
+volumes:
+  db_data:
